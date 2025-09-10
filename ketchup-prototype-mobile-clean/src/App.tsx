@@ -91,6 +91,6 @@ async function handleOnboardDone(name?: string) {
       />
     </div>
   );
-}
+
 
 export default App;
