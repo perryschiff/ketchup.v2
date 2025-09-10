@@ -52,26 +52,31 @@ async function handleOnboardDone(name?: string) {
     window.location.href = `sms:${phone}`;
   }
 
-<a href={tel} target="_self" className="w-full">
+<div className="grid grid-cols-2 gap-3">
   <Button
     className="w-full rounded-2xl"
     disabled={!tel}
-    onClick={() => logTouch(c.id, "call")}   // <-- NEW
+    onClick={() => {
+      logTouch(c.id, "call");
+      if (tel) window.location.href = tel;
+    }}
   >
     <Phone className="w-4 h-4 mr-1" /> Call
   </Button>
-</a>
 
-<a href={sms} target="_self" className="w-full">
   <Button
     variant="secondary"
     className="w-full rounded-2xl"
     disabled={!sms}
-    onClick={() => logTouch(c.id, "text")}   // <-- NEW
+    onClick={() => {
+      logTouch(c.id, "text");
+      if (sms) window.location.href = sms;
+    }}
   >
     <MessageCircle className="w-4 h-4 mr-1" /> Text
   </Button>
-</a>
+</div>
+
 
 
   if (showOnboarding) {
