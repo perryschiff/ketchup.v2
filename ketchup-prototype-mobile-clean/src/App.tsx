@@ -38,7 +38,6 @@ async function handleOnboardDone(name?: string) {
   }
 }
 
-  }
 
   // Call handler for Call button
   function handleCall(contactId: string, phone: string) {
@@ -91,6 +90,6 @@ async function handleOnboardDone(name?: string) {
       />
     </div>
   );
-
+}
 
 export default App;
