@@ -64,6 +64,12 @@ export type Contact = {
   included?: boolean;
 };
 
+type NewContactForm = {
+  name: string;
+  phone: string;
+  frequency: FreqId;
+};
+
 // --- Demo Data ---
 // All demo contacts use the same test number: +1 401-477-2209
 const TEST_PHONE = "+14014772209";
@@ -207,7 +213,7 @@ function SignalBadge({ sig }: { sig: Signal }) {
 function FrequencySelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger className="w-[160px]">
+      <SelectTrigger className="w-full sm:w-[160px]">
         <SelectValue placeholder="Frequency" />
       </SelectTrigger>
       <SelectContent>
@@ -438,6 +444,9 @@ export default function KetchupApp() {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [stopNudges, setStopNudges] = useState<null | (()=>void)>(null);
   const [showUpNext, setShowUpNext] = useState<boolean>(false); // mobile toggle
+  const [showAddContact, setShowAddContact] = useState(false);
+  const [newContactForm, setNewContactForm] = useState<NewContactForm>({ name: "", phone: "", frequency: "monthly" });
+  const [addContactError, setAddContactError] = useState<string | null>(null);
 
   // boot
   useEffect(() => {
@@ -475,6 +484,44 @@ export default function KetchupApp() {
 
   function startSession() { setQueue(ordered); setTab("session"); }
   function updateContact(updated: Contact) { setContacts(prev => prev.map(c => c.id === updated.id ? updated : c)); }
+
+  const resetNewContactForm = () => {
+    setNewContactForm({ name: "", phone: "", frequency: "monthly" });
+    setAddContactError(null);
+  };
+
+  const handleAddContactSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const name = newContactForm.name.trim();
+    if (!name) {
+      setAddContactError("Please enter a name.");
+      return;
+    }
+    const phone = newContactForm.phone.trim();
+    const newContact: Contact = {
+      id: `local-${crypto.randomUUID()}`,
+      name,
+      phone: phone ? phone : undefined,
+      frequency: newContactForm.frequency,
+      included: true,
+      signals: [],
+    };
+    setContacts(prev => [...prev, newContact]);
+    resetNewContactForm();
+    setShowAddContact(false);
+  };
+
+  const handleToggleAddContact = () => {
+    setShowAddContact((prev) => {
+      const next = !prev;
+      if (!next) {
+        resetNewContactForm();
+      } else {
+        setAddContactError(null);
+      }
+      return next;
+    });
+  };
 
   async function handleOnboardDone(name?: string) {
     try {
@@ -598,10 +645,74 @@ export default function KetchupApp() {
 
         {tab === "people" && (
           <div className="space-y-4 px-4 sm:px-0">
-            <div className="flex items-center gap-2">
-              <Input placeholder="Search people" value={query} onChange={(e)=>setQuery(e.target.value)} className="rounded-xl"/>
+            <div className="flex flex-wrap items-center gap-2">
+              <Input
+                placeholder="Search people"
+                value={query}
+                onChange={(e)=>setQuery(e.target.value)}
+                className="rounded-xl flex-1 min-w-[200px]"
+              />
               <Button className="rounded-xl" onClick={startSession}>Start Session</Button>
+              <Button
+                type="button"
+                variant={showAddContact ? "default" : "secondary"}
+                className="rounded-xl flex items-center gap-2"
+                onClick={handleToggleAddContact}
+              >
+                <UserPlus className="w-4 h-4" />
+                {showAddContact ? "Close" : "Add Person"}
+              </Button>
             </div>
+
+            {showAddContact && (
+              <Card className="rounded-2xl">
+                <CardContent className="p-4">
+                  <form className="space-y-4" onSubmit={handleAddContactSubmit}>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <Input
+                        placeholder="Full name"
+                        value={newContactForm.name}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setNewContactForm((prev) => ({ ...prev, name: value }));
+                          if (addContactError) setAddContactError(null);
+                        }}
+                        className="rounded-xl"
+                        autoFocus
+                      />
+                      <Input
+                        placeholder="Phone (optional)"
+                        value={newContactForm.phone}
+                        onChange={(e) => setNewContactForm((prev) => ({ ...prev, phone: e.target.value }))}
+                        type="tel"
+                        className="rounded-xl"
+                      />
+                      <div className="sm:col-span-2">
+                        <FrequencySelect
+                          value={newContactForm.frequency}
+                          onChange={(v) => setNewContactForm((prev) => ({ ...prev, frequency: v as FreqId }))}
+                        />
+                      </div>
+                    </div>
+                    {addContactError && (
+                      <div className="text-xs text-destructive">{addContactError}</div>
+                    )}
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        className="rounded-xl"
+                        onClick={() => { resetNewContactForm(); setShowAddContact(false); }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button type="submit" className="rounded-xl">Add Contact</Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
             <Card className="rounded-2xl">
               <CardContent className="p-4">
                 <div className="grid grid-cols-12 text-[11px] uppercase tracking-wide text-muted-foreground px-2 pb-2">
