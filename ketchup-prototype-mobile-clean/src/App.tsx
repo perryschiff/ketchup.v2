@@ -155,8 +155,8 @@ async function loadContacts(profile?: Profile): Promise<Contact[]> {
   }));
 }
 
-async function saveContacts(cs: Contact[], profile?: Profile) {
-  if (!supabase || !profile) { try { localStorage.setItem(LS_KEY, JSON.stringify(cs)); } catch {} return; }
+async function saveContacts(cs: Contact[], profile?: Profile): Promise<Contact[] | null> {
+  if (!supabase || !profile) { try { localStorage.setItem(LS_KEY, JSON.stringify(cs)); } catch {} return null; }
   const rows = cs.map(c => ({
     id: c.id.startsWith?.("local-") ? undefined : c.id,
     user_id: profile.id,
@@ -168,7 +168,23 @@ async function saveContacts(cs: Contact[], profile?: Profile) {
     affinity: c.affinity ?? null,
     included: c.included ?? true,
   }));
-  await supabase.from("contacts").upsert(rows, { onConflict: "id" });
+  const { data, error } = await supabase
+    .from("contacts")
+    .upsert(rows, { onConflict: "id" })
+    .select("id,name,relationship,phone,frequency,last_contacted,affinity,included");
+  if (error) throw error;
+  if (!data?.length) return [];
+  return data.map((r: any) => ({
+    id: r.id as string,
+    name: r.name as string,
+    relationship: (r.relationship ?? undefined) as string | undefined,
+    phone: (r.phone ?? undefined) as string | undefined,
+    frequency: (r.frequency || "monthly") as FreqId,
+    lastContacted: (r.last_contacted ?? undefined) as string | undefined,
+    affinity: (r.affinity ?? undefined) as number | undefined,
+    included: (r.included ?? true) as boolean,
+    signals: [],
+  }));
 }
 
 // --- Nudges (Browser Notifications) ---
@@ -470,7 +486,56 @@ export default function KetchupApp() {
   }, []);
 
   // persist
-  useEffect(() => { (async () => { await saveContacts(contacts, profile ?? undefined); })(); }, [contacts, profile]);
+  useEffect(() => {
+    (async () => {
+      const saved = await saveContacts(contacts, profile ?? undefined);
+      if (!saved?.length) return;
+      if (!contacts.some(c => c.id.startsWith?.("local-"))) return;
+
+      const existingIds = new Set(contacts.filter(c => !c.id.startsWith?.("local-")).map(c => c.id));
+      const inserted = saved.filter(c => !existingIds.has(c.id));
+      if (!inserted.length) return;
+
+      const normalizeLower = (value?: string | null) => (value ? value.trim().toLowerCase() : "");
+      const normalize = (value?: string | null) => (value ? value.trim() : "");
+      const contactKey = (c: Contact) => [
+        normalizeLower(c.name),
+        normalizeLower(c.relationship),
+        normalize(c.phone),
+        c.frequency,
+        c.lastContacted ?? "",
+        c.affinity != null ? String(c.affinity) : "",
+        (c.included ?? true) ? "1" : "0",
+      ].join("|");
+
+      const replacementMap = new Map<string, Contact[]>();
+      for (const contact of inserted) {
+        const key = contactKey(contact);
+        const arr = replacementMap.get(key);
+        if (arr) arr.push(contact);
+        else replacementMap.set(key, [contact]);
+      }
+
+      if (!replacementMap.size) return;
+
+      setContacts(prev => {
+        let changed = false;
+        const next = prev.map(contact => {
+          if (!contact.id.startsWith?.("local-")) return contact;
+          const key = contactKey(contact);
+          const arr = replacementMap.get(key);
+          const replacement = arr?.shift();
+          if (replacement) {
+            if (!arr?.length) replacementMap.delete(key);
+            changed = true;
+            return { ...contact, id: replacement.id };
+          }
+          return contact;
+        });
+        return changed ? next : prev;
+      });
+    })();
+  }, [contacts, profile]);
 
   // simple background nudge timer
   useEffect(() => { if (!stopNudges) return; return stopNudges; }, [stopNudges]);
