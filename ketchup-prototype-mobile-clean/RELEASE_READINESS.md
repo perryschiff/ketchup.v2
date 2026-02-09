@@ -10,13 +10,13 @@
 ## Privacy disclosure and permissions copy
 - **Privacy disclosure (store listing/app settings)**:
   - We only collect what we need to make the app work.
-  - Your contacts stay on your device unless you enable cloud sync.
+  - Your contacts stay on your device (cloud sync is **post-v1**).
   - We do not sell your data or share it with third parties for advertising.
-  - You can request deletion of synced data at any time.
+  - You can request deletion of synced data at any time (**post-v1**).
 - **Permissions copy**:
   - **Contacts**: “Allow Ketchup to access your contacts to show who you can keep up with. Contacts stay on your device unless you enable sync.”
-  - **Notifications**: “Enable notifications to get reminders when it’s time to catch up.”
-  - **Camera (optional, profile photo)**: “Allow camera access to take a profile photo. Photos are stored locally unless you enable sync.”
+  - **Notifications (post-v1)**: “Enable notifications to get reminders when it’s time to catch up.”
+  - **Camera (optional, profile photo)**: “Allow camera access to take a profile photo. Photos are stored locally (cloud sync is **post-v1**).”
 
 ## Build signing steps
 - **iOS**:
@@ -32,12 +32,12 @@
   4) Upload the AAB to Google Play Console.
 
 ## Internal testing steps
-1) Run a smoke test on iOS and Android devices (or emulators) to verify onboarding, swipe interactions, and reminder flows.
+1) Run a smoke test on iOS and Android devices (or emulators) to verify onboarding, swipe interactions, and list management flows.
 2) Verify permission prompts show the correct copy and that deny/allow paths behave as expected.
-3) Test sync off/on flows to confirm data stays local unless enabled.
+3) Test sync off/on flows to confirm data stays local unless enabled (**post-v1**).
 4) Check UI layout on small and large screens (iPhone SE-class and large Android).
 5) Verify offline behavior for core screens and graceful handling when network is unavailable.
-6) Confirm notifications fire using a short reminder interval.
+6) Confirm notifications fire using a short reminder interval (**post-v1**).
 
 ## Feedback collection plan
 - **Internal testers**: Recruit 5–10 testers with a mix of heavy/light contact lists.
