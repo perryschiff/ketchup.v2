@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { motion, useMotionValue, useTransform, AnimatePresence } from "framer-motion";
-import { Phone, MessageCircle, Star, Clock, ChevronRight, UserPlus, SlidersHorizontal, Info, Calendar, Sparkles, X, Check, Flame, Filter, BellRing, Shield, LogOut, User, Upload } from "lucide-react";
+import { Phone, MessageCircle, Star, Clock, ChevronRight, SlidersHorizontal, Info, Calendar, Sparkles, X, Check, Flame, Filter, Shield, LogOut, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -13,11 +13,12 @@ const FREQUENCIES = [
   { id: "weekly", label: "Weekly", days: 7 },
   { id: "biweekly", label: "Every 2 weeks", days: 14 },
   { id: "monthly", label: "Monthly", days: 30 },
-  { id: "quarterly", label: "Quarterly", days: 90 },
+  { id: "quarterly", label: "Every 3 months", days: 90 },
   { id: "semiannual", label: "Every 6 months", days: 182 },
+  { id: "yearly", label: "Yearly", days: 365 },
 ] as const;
 
-type FreqId = typeof FREQUENCIES[number]["id"];
+type FreqId = typeof FREQUENCIES[number]["id"] | "custom";
 
 function daysSince(dateStr?: string) {
   if (!dateStr) return 9999;
@@ -32,11 +33,16 @@ function nextDueDays(lastContacted?: string, cadenceDays = 30) {
 }
 
 function scoreContact(c: Contact) {
-  const cadenceDays = FREQUENCIES.find(f => f.id === c.frequency)?.days ?? 30;
+  const cadenceDays = getCadenceDays(c);
   const overdue = Math.max(0, daysSince(c.lastContacted) - cadenceDays);
   const newsBoost = (c.signals?.length || 0) * 10;
   const affinity = c.affinity ?? 0;
   return overdue * 1.5 + newsBoost * 1.2 + affinity;
+}
+
+function getCadenceDays(c: Contact) {
+  if (c.frequency === "custom" && c.customIntervalDays) return c.customIntervalDays;
+  return FREQUENCIES.find((f) => f.id === c.frequency)?.days ?? 30;
 }
 
 function telHref(num?: string) { return num ? `tel:${num}` : undefined; }
@@ -57,6 +63,7 @@ export type Contact = {
   relationship?: string;
   lastContacted?: string; // ISO
   frequency: FreqId;
+  customIntervalDays?: number;
   affinity?: number; // 0-10 subjective
   signals?: Signal[];
   sources?: string[]; // e.g., ["gmail","linkedin"]
@@ -86,6 +93,14 @@ const seedContacts: Contact[] = [
     lastContacted: new Date(Date.now() - 50 * 24 * 3600 * 1000).toISOString(), affinity: 5,
     signals: [{ type: "birthday", when: new Date(Date.now() + 10 * 24 * 3600 * 1000).toISOString(), note: "Birthday in 10 days" }],
     sources: ["calendar"], included: true },
+  { id: "6", name: "Jordan Lee", relationship: "Coworker", phone: TEST_PHONE, frequency: "quarterly",
+    lastContacted: new Date(Date.now() - 120 * 24 * 3600 * 1000).toISOString(), affinity: 4,
+    signals: [{ type: "promotion", when: new Date(Date.now() - 40 * 24 * 3600 * 1000).toISOString(), note: "New role announcement" }],
+    sources: ["linkedin"], included: true },
+  { id: "7", name: "Riya Singh", relationship: "Friend", phone: TEST_PHONE, frequency: "yearly",
+    lastContacted: new Date(Date.now() - 400 * 24 * 3600 * 1000).toISOString(), affinity: 6,
+    signals: [{ type: "moved", when: new Date(Date.now() - 25 * 24 * 3600 * 1000).toISOString(), note: "Moved to Chicago" }],
+    sources: ["instagram"], included: true },
 ];
 
 // --- Storage (Local + Optional Supabase) ---
@@ -141,6 +156,7 @@ async function loadContacts(profile?: Profile): Promise<Contact[]> {
     relationship: r.relationship || undefined,
     phone: r.phone || undefined,
     frequency: (r.frequency || "monthly") as FreqId,
+    customIntervalDays: r.custom_interval_days ?? undefined,
     lastContacted: r.last_contacted || undefined,
     affinity: r.affinity ?? undefined,
     included: r.included ?? true,
@@ -157,32 +173,12 @@ async function saveContacts(cs: Contact[], profile?: Profile) {
     relationship: c.relationship ?? null,
     phone: c.phone ?? null,
     frequency: c.frequency,
+    custom_interval_days: c.customIntervalDays ?? null,
     last_contacted: c.lastContacted ?? null,
     affinity: c.affinity ?? null,
     included: c.included ?? true,
   }));
   await supabase.from("contacts").upsert(rows, { onConflict: "id" });
-}
-
-// --- Nudges (Browser Notifications) ---
-function canNotify() { return "Notification" in window; }
-async function requestNotifyPermission(): Promise<NotificationPermission> {
-  if (!canNotify()) return "denied";
-  if (Notification.permission === "granted") return "granted";
-  if (Notification.permission === "denied") return "denied";
-  return await Notification.requestPermission();
-}
-function startNudgeTimer(minutes: number, onTick?: ()=>void) {
-  let lastId: any;
-  function tick() {
-    onTick?.();
-    if (canNotify() && Notification.permission === "granted") {
-      new Notification("Free to Ketchup?", { body: "Swipe a couple contacts now", tag: "ketchup-nudge" });
-    }
-    lastId = setTimeout(tick, minutes * 60 * 1000);
-  }
-  lastId = setTimeout(tick, minutes * 60 * 1000);
-  return () => clearTimeout(lastId);
 }
 
 // --- UI Components ---
@@ -215,12 +211,15 @@ function FrequencySelect({ value, onChange }: { value: string; onChange: (v: str
             {f.label}
           </SelectItem>
         ))}
+        <SelectItem value="custom">Custom</SelectItem>
       </SelectContent>
     </Select>
   );
 }
 
 function PersonRow({ c, onChange }: { c: Contact; onChange: (c: Contact) => void }) {
+  const cadenceDays = getCadenceDays(c);
+  const showCustom = c.frequency === "custom";
   return (
     <div className="grid grid-cols-12 items-center gap-2 p-2 rounded-xl hover:bg-muted/50">
       <div className="col-span-5 flex items-center gap-3">
@@ -234,9 +233,26 @@ function PersonRow({ c, onChange }: { c: Contact; onChange: (c: Contact) => void
       </div>
       <div className="col-span-3 text-xs text-muted-foreground flex items-center gap-1">
         <Clock className="w-4 h-4" />
-        {nextDueDays(c.lastContacted, FREQUENCIES.find(f=>f.id===c.frequency)?.days).toString()}d left
+        {nextDueDays(c.lastContacted, cadenceDays).toString()}d left
       </div>
-      <div className="col-span-3"><FrequencySelect value={c.frequency} onChange={(v)=>onChange({...c, frequency: v as any})} /></div>
+      <div className="col-span-3 space-y-2">
+        <FrequencySelect
+          value={c.frequency}
+          onChange={(v) => onChange({ ...c, frequency: v as FreqId, customIntervalDays: v === "custom" ? c.customIntervalDays ?? 30 : undefined })}
+        />
+        {showCustom && (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            <Input
+              type="number"
+              min={1}
+              className="h-8 w-20 rounded-lg text-xs"
+              value={c.customIntervalDays ?? 30}
+              onChange={(e) => onChange({ ...c, customIntervalDays: Number(e.target.value || 1) })}
+            />
+            days
+          </div>
+        )}
+      </div>
       <div className="col-span-1 text-right">
         <Button variant={c.included ? "default" : "secondary"} size="sm" onClick={()=>onChange({...c, included: !c.included})}>
           {c.included ? "On" : "Off"}
@@ -290,7 +306,7 @@ function SwipeCard({ c, onSkip, onPick }: { c: Contact; onSkip: ()=>void; onPick
             </div>
             <div className="flex items-center gap-2">
               <SlidersHorizontal className="w-4 h-4" />
-              {FREQUENCIES.find(f=>f.id===c.frequency)?.label}
+              {c.frequency === "custom" ? "Custom cadence" : FREQUENCIES.find(f=>f.id===c.frequency)?.label}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 pt-1">
@@ -354,15 +370,48 @@ function ActionSheet({ c, onClose }: { c: Contact; onClose: ()=>void }) {
   );
 }
 
-function Onboarding({ onDone, onImportSeed }: { onDone: (name?: string)=>void; onImportSeed: ()=>void }) {
-  const [name, setName] = useState("");
-  const [nudgeMins, setNudgeMins] = useState(30);
-  const [notifyState, setNotifyState] = useState<NotificationPermission | "unsupported">("default");
+type OnboardingStep = "profile" | "select" | "frequency";
 
-  async function enableNotify() {
-    if (!canNotify()) { setNotifyState("unsupported"); return; }
-    const res = await requestNotifyPermission();
-    setNotifyState(res);
+function Onboarding({
+  onDone,
+  availableContacts,
+}: {
+  onDone: (payload: { name?: string; selected: Contact[]; defaultFrequency: FreqId; customIntervalDays?: number }) => void;
+  availableContacts: Contact[];
+}) {
+  const [name, setName] = useState("");
+  const [step, setStep] = useState<OnboardingStep>("profile");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [defaultFrequency, setDefaultFrequency] = useState<FreqId>("monthly");
+  const [customIntervalDays, setCustomIntervalDays] = useState<number>(30);
+  const minRequired = 5;
+  const isCustom = defaultFrequency === "custom";
+  const selectedContacts = useMemo(
+    () => availableContacts.filter((c) => selectedIds.includes(c.id)),
+    [availableContacts, selectedIds],
+  );
+
+  function toggleContact(id: string) {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]));
+  }
+
+  function handleNextFromProfile() {
+    setStep("select");
+  }
+
+  function handleNextFromSelect() {
+    if (selectedIds.length < minRequired) return;
+    setStep("frequency");
+  }
+
+  function handleFinish() {
+    const selected = selectedContacts.map((c) => ({
+      ...c,
+      included: true,
+      frequency: defaultFrequency,
+      customIntervalDays: defaultFrequency === "custom" ? customIntervalDays : undefined,
+    }));
+    onDone({ name: name || undefined, selected, defaultFrequency, customIntervalDays: isCustom ? customIntervalDays : undefined });
   }
 
   return (
@@ -376,40 +425,97 @@ function Onboarding({ onDone, onImportSeed }: { onDone: (name?: string)=>void; o
           </div>
         </div>
 
-        <Card className="rounded-2xl">
-          <CardHeader><CardTitle className="text-base">Your profile</CardTitle></CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center gap-3">
-              <User className="w-4 h-4"/>
-              <Input placeholder="Your name (optional)" value={name} onChange={(e)=>setName(e.target.value)} className="rounded-xl"/>
-            </div>
-            <div className="flex items-center gap-3 text-xs text-muted-foreground">
-              <Shield className="w-4 h-4"/> No password needed; we can create an anonymous account.
-            </div>
-            <div className="flex gap-2">
-              <Button className="rounded-xl" onClick={()=>onDone(name || undefined)}>Continue</Button>
-              <Button variant="secondary" className="rounded-xl" onClick={onImportSeed}><Upload className="w-4 h-4 mr-1"/>Load demo contacts</Button>
-            </div>
-          </CardContent>
-        </Card>
+        {step === "profile" && (
+          <Card className="rounded-2xl">
+            <CardHeader><CardTitle className="text-base">Your profile</CardTitle></CardHeader>
+            <CardContent className="space-y-3">
+              <div className="flex items-center gap-3">
+                <User className="w-4 h-4"/>
+                <Input placeholder="Your name (optional)" value={name} onChange={(e)=>setName(e.target.value)} className="rounded-xl"/>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                <Shield className="w-4 h-4"/> No password needed; we’ll create an anonymous profile.
+              </div>
+              <div className="flex gap-2">
+                <Button className="rounded-xl" onClick={handleNextFromProfile}>Continue</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
-        <Card className="rounded-2xl">
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><BellRing className="w-4 h-4"/> Nudges</CardTitle></CardHeader>
-          <CardContent className="space-y-3 text-sm">
-            <p>Let Ketchup gently nudge you when you’re likely free.</p>
-            <div className="flex items-center gap-2">
-              <Input type="number" className="w-24 rounded-xl" value={nudgeMins} onChange={(e)=>setNudgeMins(parseInt(e.target.value || "0"))} />
-              <span className="text-muted-foreground">minutes between nudges</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button variant="secondary" onClick={enableNotify} className="rounded-xl">Enable notifications</Button>
-              <span className="text-xs text-muted-foreground">{notifyState === "granted" ? "Enabled" : notifyState === "denied" ? "Blocked" : notifyState === "unsupported" ? "Not supported by this browser" : "Ask your browser"}</span>
-            </div>
-            <div className="text-right">
-              <Button className="rounded-xl" onClick={()=>onDone(name || undefined)}>Finish</Button>
-            </div>
-          </CardContent>
-        </Card>
+        {step === "select" && (
+          <Card className="rounded-2xl">
+            <CardHeader><CardTitle className="text-base">Choose your Ketchup list</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Select at least {minRequired} contacts to get started. You can edit this later.
+              </p>
+              <div className="space-y-2">
+                {availableContacts.map((c) => {
+                  const selected = selectedIds.includes(c.id);
+                  const initials = c.name.split(" ").map((p) => p[0]).slice(0, 2).join("");
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => toggleContact(c.id)}
+                      className={`w-full flex items-center justify-between rounded-xl border px-3 py-2 text-left ${selected ? "border-primary bg-primary/5" : "border-muted"}`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center text-xs font-semibold">{initials}</div>
+                        <div>
+                          <div className="font-medium">{c.name}</div>
+                          <div className="text-xs text-muted-foreground">{c.relationship || "—"}</div>
+                        </div>
+                      </div>
+                      <div className="text-xs text-muted-foreground">{selected ? "Selected" : "Tap to add"}</div>
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="flex items-center justify-between text-xs text-muted-foreground">
+                <span>{selectedIds.length} selected</span>
+                {selectedIds.length < minRequired && (
+                  <span>Select at least {minRequired} contacts.</span>
+                )}
+              </div>
+              <div className="flex justify-between">
+                <Button variant="ghost" className="rounded-xl" onClick={() => setStep("profile")}>Back</Button>
+                <Button className="rounded-xl" disabled={selectedIds.length < minRequired} onClick={handleNextFromSelect}>Continue</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {step === "frequency" && (
+          <Card className="rounded-2xl">
+            <CardHeader><CardTitle className="text-base">Set your default cadence</CardTitle></CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-sm text-muted-foreground">
+                Choose how often you’d like to catch up. You can customize each contact later.
+              </p>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+                <FrequencySelect value={defaultFrequency} onChange={(v) => setDefaultFrequency(v as FreqId)} />
+                {isCustom && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Input
+                      type="number"
+                      min={1}
+                      className="w-24 rounded-xl"
+                      value={customIntervalDays}
+                      onChange={(e) => setCustomIntervalDays(Number(e.target.value || 1))}
+                    />
+                    days
+                  </div>
+                )}
+              </div>
+              <div className="flex justify-between">
+                <Button variant="ghost" className="rounded-xl" onClick={() => setStep("select")}>Back</Button>
+                <Button className="rounded-xl" onClick={handleFinish}>Finish</Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         <div className="text-xs text-muted-foreground text-center">You can change everything later in Settings.</div>
       </div>
@@ -551,7 +657,6 @@ export default function KetchupApp() {
   const [picked, setPicked] = useState<Contact | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
-  const [stopNudges, setStopNudges] = useState<null | (()=>void)>(null);
   const [showUpNext, setShowUpNext] = useState<boolean>(false); // mobile toggle
 
   // boot
@@ -578,9 +683,6 @@ export default function KetchupApp() {
   // persist
   useEffect(() => { (async () => { await saveContacts(contacts, profile ?? undefined); })(); }, [contacts, profile]);
 
-  // simple background nudge timer
-  useEffect(() => { if (!stopNudges) return; return stopNudges; }, [stopNudges]);
-
   const filtered = useMemo(() => {
     const q = query.toLowerCase();
     return contacts.filter(c => (c.included ?? true) && c.name.toLowerCase().includes(q));
@@ -591,28 +693,26 @@ export default function KetchupApp() {
   function startSession() { setQueue(ordered); setTab("session"); }
   function updateContact(updated: Contact) { setContacts(prev => prev.map(c => c.id === updated.id ? updated : c)); }
 
-  async function handleOnboardDone(name?: string) {
+  async function handleOnboardDone(payload: { name?: string; selected: Contact[]; defaultFrequency: FreqId; customIntervalDays?: number }) {
     try {
-      const p = await signInAnon(name);
+      const p = await signInAnon(payload.name);
       setProfile(p);
+      setContacts(payload.selected);
       localStorage.setItem("ketchup.onboarded", "1");
       setShowOnboarding(false);
-      const stop = startNudgeTimer(45);
-      setStopNudges(() => stop);
     } catch (e) {
       console.error(e);
-      const localP = { id: crypto.randomUUID(), display_name: name } as Profile;
+      const localP = { id: crypto.randomUUID(), display_name: payload.name } as Profile;
       localStorage.setItem("ketchup.profile.v1", JSON.stringify(localP));
       setProfile(localP);
+      setContacts(payload.selected);
       localStorage.setItem("ketchup.onboarded", "1");
       setShowOnboarding(false);
     }
   }
 
-  function handleImportSeed() { setContacts(seedContacts); }
-
   // Gate entire app behind onboarding
-  if (showOnboarding) return <Onboarding onDone={handleOnboardDone} onImportSeed={handleImportSeed} />;
+  if (showOnboarding) return <Onboarding onDone={handleOnboardDone} availableContacts={seedContacts} />;
 
   const top = queue[0];
 
@@ -647,9 +747,6 @@ export default function KetchupApp() {
                     <div className="flex items-center gap-3">
                       <Button onClick={startSession} className="rounded-2xl">Start Session</Button>
                       <Button variant="secondary" onClick={()=>setTab("people")} className="rounded-2xl">Edit People</Button>
-                    </div>
-                    <div className="text-xs text-muted-foreground flex items-center gap-2 pt-2">
-                      <BellRing className="w-4 h-4"/> Enable notifications in Settings to get gentle nudges.
                     </div>
                   </CardContent>
                 </Card>
@@ -747,7 +844,7 @@ export default function KetchupApp() {
       )}</AnimatePresence>
 
       <footer className="max-w-5xl mx-auto mt-8 sm:mt-10 text-center text-xs text-muted-foreground space-y-1 px-4 sm:px-0 pb-6">
-        <div>Prototype. Data lives in your browser unless Supabase is configured. Notifications are client-only demo nudges.</div>
+        <div>Prototype. Data lives in your browser unless Supabase is configured.</div>
         <div className="flex justify-center gap-2">
           <Button size="sm" variant="ghost" className="rounded-xl" onClick={()=>setShowOnboarding(true)}>Settings</Button>
           {supabase && (
