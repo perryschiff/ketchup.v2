@@ -34,14 +34,20 @@
 ### List edit
 - [ ] Add a contact to the list and confirm it appears immediately.
 - [ ] Remove a contact and confirm it disappears from the list and selection count updates.
-- [ ] Reorder contacts (if supported) and verify the new order persists in the UI.
-- [ ] Edit contact details and confirm the list reflects updated information.
+
+### Frequency settings
+- [ ] Select each frequency preset and verify the UI reflects the chosen cadence.
+- [ ] Switch between frequency presets and confirm only the latest selection is active.
+- [ ] Enter a custom frequency interval within allowed bounds and verify it is accepted.
+- [ ] Enter a custom frequency interval outside allowed bounds and verify validation messaging.
+- [ ] Enter non-numeric or empty custom intervals and verify input validation behavior.
 
 ### Persistence
 - [ ] Force close and relaunch; verify selected contacts persist.
 - [ ] Reboot device and relaunch; verify selections persist.
 - [ ] Log out/log in (if applicable) and confirm data integrity.
 - [ ] Update app build (same data store) and confirm selections persist.
+- [ ] Set different frequency settings per contact, restart the app, and confirm each contact retains its frequency.
 
 ## Device matrix
 
