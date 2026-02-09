@@ -21,7 +21,7 @@
   - Stores user preferences, onboarding completion, and cached “recently viewed” contact IDs.
 - **Structured / Offline Cache:** SQLite (via `expo-sqlite`)
   - Stores contact metadata, interaction history, tags, and “swipe decisions.”
-  - Enables fast querying for “Up Next” and analytics without network dependency.
+  - Enables fast querying for analytics without network dependency (“Up Next” is **post-v1**).
 
 ## Navigation Structure
 - **Library:** `@react-navigation/native`
@@ -31,10 +31,10 @@
     - `Main` (tab)
   - **Main Tabs**
     - `Home` (swipe cards)
-    - `Up Next` (queued contacts list)
+    - `Lists` (list management)
     - `Profile/Settings`
   - **Nested Details**
-    - `ContactDetail` pushed from Home/Up Next
+    - `ContactDetail` pushed from Home/Lists
 
 ## Swipe UI Library
 - **Recommendation:** `react-native-gesture-handler` + `react-native-reanimated` (custom swipe card)
@@ -50,12 +50,12 @@
    |
    |-- UI Layer
    |     |-- Swipe Deck (gesture-handler + reanimated)
-   |     |-- Up Next List
+   |     |-- List Management
    |     |-- Contact Detail
    |
    |-- Navigation Layer (@react-navigation)
    |     |-- Root Stack (Onboarding -> Main Tabs)
-   |     |-- Tabs (Home | Up Next | Settings)
+   |     |-- Tabs (Home | Lists | Settings)
    |
    |-- Data Layer
    |     |-- Contact Service (expo-contacts)
@@ -63,6 +63,6 @@
    |           |-- AsyncStorage (prefs, flags)
    |           |-- SQLite (contacts, interactions)
    |
-   |-- Optional Cloud Sync
+   |-- Optional Cloud Sync (**post-v1**)
          |-- Supabase (auth + sync when online)
 ```
