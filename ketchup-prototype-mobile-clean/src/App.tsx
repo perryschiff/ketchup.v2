@@ -417,9 +417,134 @@ function Onboarding({ onDone, onImportSeed }: { onDone: (name?: string)=>void; o
   );
 }
 
+function Wireframes() {
+  return (
+    <div className="space-y-8 px-4 sm:px-0">
+      <div className="space-y-2">
+        <h2 className="text-xl font-semibold">Wireframes</h2>
+        <p className="text-sm text-muted-foreground">Draft flows with screen names, primary CTAs, and empty/error states.</p>
+      </div>
+
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle className="text-base">Onboarding flow</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5 text-sm">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">1. Welcome</p>
+              <p className="text-muted-foreground">Headline, value props, and short preview of swipe flow.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Get started</span></p>
+              <p className="text-xs text-muted-foreground">Secondary: “I already have an account”</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">2. Permissions</p>
+              <p className="text-muted-foreground">Request contacts + notifications permission.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Allow access</span></p>
+              <p className="text-xs text-muted-foreground">Error: “Permission denied” → show Settings deep link.</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">3. Native contact picker</p>
+              <p className="text-muted-foreground">Show OS picker with search and recent contacts.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Select contacts</span></p>
+              <p className="text-xs text-muted-foreground">Empty: “No contacts found” with invite options.</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">4. Minimum selection validation</p>
+              <p className="text-muted-foreground">Confirm at least 5 contacts selected.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Continue</span></p>
+              <p className="text-xs text-muted-foreground">Error: “Select at least 5 contacts” + counter.</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">5. Frequency selection</p>
+              <p className="text-muted-foreground">Set default cadence + optional per-contact overrides.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Save cadence</span></p>
+              <p className="text-xs text-muted-foreground">Secondary: “Skip for now”</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">6. Confirmation</p>
+              <p className="text-muted-foreground">Summary of selected contacts + cadence + first session preview.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Start swiping</span></p>
+              <p className="text-xs text-muted-foreground">Empty state: “No contacts yet” → re-open picker.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle className="text-base">Swipe flow</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5 text-sm">
+          <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">Contact card</p>
+              <p className="text-muted-foreground">Name, photo, last contact, and context signals.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Swipe right = Reach out</span></p>
+              <p className="text-xs text-muted-foreground">Secondary: “Tap for details”</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">Swipe left</p>
+              <p className="text-muted-foreground">Defer contact, optionally snooze for a week.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Snooze 7 days</span></p>
+              <p className="text-xs text-muted-foreground">Empty: “All caught up” end-of-stack screen.</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">Swipe right</p>
+              <p className="text-muted-foreground">Reveal actions to call or text.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Call now</span></p>
+              <p className="text-xs text-muted-foreground">Secondary: “Send text”</p>
+            </div>
+          </div>
+          <div className="rounded-xl border border-dashed p-4 space-y-2">
+            <p className="font-semibold">Call/Text actions</p>
+            <p className="text-muted-foreground">Action sheet with quick notes, last message preview, and “log interaction”.</p>
+            <p className="text-xs">Primary CTA: <span className="font-medium">Done — log this</span></p>
+            <p className="text-xs text-muted-foreground">Error: “No phone number” → prompt to add contact info.</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl">
+        <CardHeader>
+          <CardTitle className="text-base">Manage list</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5 text-sm">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">Manage list home</p>
+              <p className="text-muted-foreground">Search, filters, and contact cards with cadence.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Add contacts</span></p>
+              <p className="text-xs text-muted-foreground">Empty: “No contacts yet” → open picker.</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">Edit contact</p>
+              <p className="text-muted-foreground">Update name, phone, relationship, and cadence.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Save changes</span></p>
+              <p className="text-xs text-muted-foreground">Error: “Missing phone/email” validation.</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">Add/remove contacts</p>
+              <p className="text-muted-foreground">Multi-select add flow + swipe to remove.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Confirm selection</span></p>
+              <p className="text-xs text-muted-foreground">Error: “Fewer than 5 contacts” with counter.</p>
+            </div>
+            <div className="rounded-xl border border-dashed p-4 space-y-2">
+              <p className="font-semibold">Update frequency</p>
+              <p className="text-muted-foreground">Bulk update cadence for multiple contacts.</p>
+              <p className="text-xs">Primary CTA: <span className="font-medium">Apply cadence</span></p>
+              <p className="text-xs text-muted-foreground">Empty: “No contacts selected” prompt.</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 // --- Main ---
 export default function KetchupApp() {
-  const [tab, setTab] = useState<"session" | "people">("session");
+  const [tab, setTab] = useState<"session" | "people" | "wireframes">("session");
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [query, setQuery] = useState("");
   const [queue, setQueue] = useState<Contact[]>([]);
@@ -507,6 +632,7 @@ export default function KetchupApp() {
           <div className="inline-flex w-full sm:w-auto rounded-2xl p-1 bg-muted justify-between sm:justify-start max-w-xs">
             <Button variant={tab==="session"?"default":"ghost"} className="rounded-xl flex-1" onClick={()=>setTab("session")}>Session</Button>
             <Button variant={tab==="people"?"default":"ghost"} className="rounded-xl flex-1" onClick={()=>setTab("people")}>People</Button>
+            <Button variant={tab==="wireframes"?"default":"ghost"} className="rounded-xl flex-1" onClick={()=>setTab("wireframes")}>Wireframes</Button>
           </div>
         </header>
 
@@ -610,6 +736,8 @@ export default function KetchupApp() {
             </Card>
           </div>
         )}
+
+        {tab === "wireframes" && <Wireframes />}
       </div>
 
       <AnimatePresence>{picked && (
