@@ -16,6 +16,12 @@
 - [ ] Deselect a contact to drop below minimum; confirm the app blocks progression and shows feedback.
 - [ ] Select beyond the minimum; verify the app allows extra selections without errors.
 
+### Frequency settings
+- [ ] Choose a preset frequency (weekly, every 2 weeks, monthly, every 3 months, every 6 months, yearly) and confirm it is saved.
+- [ ] Enter a custom interval (days) and confirm it is saved.
+- [ ] Switch from preset to custom (and back) and confirm the UI updates and persists correctly.
+- [ ] Edit frequency post-setup and confirm changes persist.
+
 ### Swipe actions
 - [ ] Swipe right on a contact to trigger the primary action; verify the expected outcome and UI feedback.
 - [ ] Swipe left on a contact to trigger the secondary action; verify expected outcome and UI feedback.
@@ -34,20 +40,13 @@
 ### List edit
 - [ ] Add a contact to the list and confirm it appears immediately.
 - [ ] Remove a contact and confirm it disappears from the list and selection count updates.
-
-### Frequency settings
-- [ ] Select each frequency preset and verify the UI reflects the chosen cadence.
-- [ ] Switch between frequency presets and confirm only the latest selection is active.
-- [ ] Enter a custom frequency interval within allowed bounds and verify it is accepted.
-- [ ] Enter a custom frequency interval outside allowed bounds and verify validation messaging.
-- [ ] Enter non-numeric or empty custom intervals and verify input validation behavior.
+- [ ] Edit frequency and confirm the list reflects updated information.
 
 ### Persistence
 - [ ] Force close and relaunch; verify selected contacts persist.
 - [ ] Reboot device and relaunch; verify selections persist.
 - [ ] Log out/log in (if applicable) and confirm data integrity.
 - [ ] Update app build (same data store) and confirm selections persist.
-- [ ] Set different frequency settings per contact, restart the app, and confirm each contact retains its frequency.
 
 ## Device matrix
 

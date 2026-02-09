@@ -7,9 +7,9 @@
 | `user_id` | string | **Required** | Stable, app-level user identifier. Use the authenticated user ID if available; otherwise a temporary anonymous ID that later resolves to the user. |
 | `session_id` | string | **Required** | Unique per app session (e.g., UUID). Regenerate on cold start or after inactivity timeout. |
 | `timestamp` | string (ISO-8601) | **Required** | Client time in UTC, e.g. `2025-01-15T18:42:11.123Z`. |
-| `app_version` | string | **Required** | App release version, e.g., `1.2.3`. |
-| `platform` | string | **Required** | Client platform, e.g., `ios`, `android`, `web`. |
-| `device_os_version` | string | **Required** | OS version on the device, e.g., `iOS 17.3`, `Android 14`. |
+| `app_version` | string | **Required** | Build version, e.g. `1.0.0 (100)`. |
+| `platform` | string | **Required** | `ios` or `android`. |
+| `device_os_version` | string | **Required** | OS version, e.g. `iOS 17.2`, `Android 13`. |
 
 ## Onboarding events
 
