@@ -1,4 +1,4 @@
-# Release Readiness Notes
+# Release Readiness Notes (v1)
 
 ## App icon + splash
 - **App icon**: Use a simple ketchup bottle glyph in the brand red with a transparent background so it stays crisp on light/dark themes. Provide square 1024×1024 source art for platform tooling.
@@ -10,13 +10,11 @@
 ## Privacy disclosure and permissions copy
 - **Privacy disclosure (store listing/app settings)**:
   - We only collect what we need to make the app work.
-  - Your contacts stay on your device (cloud sync is **post-v1**).
+  - Your curated contacts stay on your device.
   - We do not sell your data or share it with third parties for advertising.
-  - You can request deletion of synced data at any time (**post-v1**).
 - **Permissions copy**:
-  - **Contacts**: “Allow Ketchup to access your contacts to show who you can keep up with. Contacts stay on your device unless you enable sync.”
-  - **Notifications (post-v1)**: “Enable notifications to get reminders when it’s time to catch up.”
-  - **Camera (optional, profile photo)**: “Allow camera access to take a profile photo. Photos are stored locally (cloud sync is **post-v1**).”
+  - **Contacts**: “Allow Ketchup to access your contacts so you can choose who to keep up with. Selected contacts stay on your device.”
+  - **Phone/SMS**: “Allow phone/SMS access to place calls or send texts from Ketchup.”
 
 ## Build signing steps
 - **iOS**:
@@ -32,16 +30,14 @@
   4) Upload the AAB to Google Play Console.
 
 ## Internal testing steps
-1) Run a smoke test on iOS and Android devices (or emulators) to verify onboarding, swipe interactions, and list management flows.
+1) Run a smoke test on iOS and Android devices (or emulators) to verify onboarding and swipe interactions.
 2) Verify permission prompts show the correct copy and that deny/allow paths behave as expected.
-3) Test sync off/on flows to confirm data stays local unless enabled (**post-v1**).
-4) Check UI layout on small and large screens (iPhone SE-class and large Android).
-5) Verify offline behavior for core screens and graceful handling when network is unavailable.
-6) Confirm notifications fire using a short reminder interval (**post-v1**).
+3) Check UI layout on small and large screens (iPhone SE-class and large Android).
+4) Verify offline behavior for core screens and graceful handling when network is unavailable.
 
 ## Feedback collection plan
 - **Internal testers**: Recruit 5–10 testers with a mix of heavy/light contact lists.
 - **Channel**: Use a shared feedback form (e.g., Google Form) and a dedicated Slack/Discord channel for quick notes.
-- **Prompting**: Ask testers to complete a 10-minute task list (onboarding, add contacts, set reminder) and capture any friction.
-- **Metrics**: Track completion rate, time-to-first-reminder, and number of contacts added.
+- **Prompting**: Ask testers to complete a 10-minute task list (onboarding, add contacts, set frequency) and capture any friction.
+- **Metrics**: Track completion rate, time-to-first-action, and number of contacts added.
 - **Iteration**: Triage feedback weekly, fix top 3 issues, and repeat with a new build.
