@@ -1,68 +1,53 @@
-# Mobile Architecture (Proposed)
+# Mobile Architecture (v1)
 
 ## Platform Decision
-**Recommendation: React Native (Expo).**
-- Best fit for a mobile-first contact picker + swipe UI experience while keeping velocity high.
-- Access to native contacts (iOS/Android) and local storage options with first-party/maintained libraries.
-- Expo provides faster iteration and OTA updates; can eject later if deeper native integrations are needed.
+**React Native (Expo).**
+- Best fit for iOS + Android delivery with a native contact picker and swipe UI.
+- High iteration speed with Expo; can eject later if deeper native integrations are required.
 
-**Alternatives considered**
-- **Flutter:** Strong UI performance, but higher learning curve for the existing React stack and less direct code reuse.
-- **Capacitor + React Web:** Faster reuse of web code, but contact access + swipe performance can be less consistent on low-end devices.
+## Repo Setup (v1)
+- Initialize Expo app with TypeScript.
+- Add navigation (`@react-navigation/native`).
+- Add gesture handling + animation (`react-native-gesture-handler`, `react-native-reanimated`).
+- Configure linting/formatting (ESLint + Prettier).
+- Document local run steps for iOS + Android.
 
 ## Contact Picker Integration Approach
-- **Primary:** Use Expo Contacts for permission + fetch contacts.
-  - `expo-contacts` handles platform permissions and normalized contact retrieval.
-  - Filter/normalize to the app’s internal `Contact` model (name, phone numbers, avatar).
-- **Fallback / Advanced:** If deeper native access is needed (e.g., iOS CNContactStore tuning), eject to bare RN and use `react-native-contacts`.
+- **Primary:** `expo-contacts` for permissions + contact retrieval.
+- Normalize contacts into internal `Contact` model:
+  - `id`, `name`, `phoneNumbers`, `photoUri`.
 
 ## Local Storage Strategy
-- **Default (MVP):** AsyncStorage for lightweight key-value data
-  - Stores user preferences, onboarding completion, and cached “recently viewed” contact IDs.
-- **Structured / Offline Cache:** SQLite (via `expo-sqlite`)
-  - Stores contact metadata, interaction history, tags, and “swipe decisions.”
-  - Enables fast querying for analytics without network dependency (“Up Next” is **post-v1**).
+- **MVP:** `AsyncStorage` for lightweight preferences and onboarding flags.
+- **Structured data:** `expo-sqlite` for contacts + frequency settings.
 
-## Navigation Structure
-- **Library:** `@react-navigation/native`
-- **Pattern:**
-  - **Root Stack**
-    - `Onboarding` (stack)
-    - `Main` (tab)
-  - **Main Tabs**
-    - `Home` (swipe cards)
-    - `Lists` (list management)
-    - `Profile/Settings`
-  - **Nested Details**
-    - `ContactDetail` pushed from Home/Lists
+## Navigation Structure (v1)
+- **Root Stack**
+  - Onboarding (stack)
+  - Main (stack)
+- **Main Stack**
+  - Swipe Deck (home)
+  - Manage List
+  - Contact Detail (optional)
 
 ## Swipe UI Library
-- **Recommendation:** `react-native-gesture-handler` + `react-native-reanimated` (custom swipe card)
-  - Highest performance, full control of gestures and animations.
-  - Can recreate the web prototype behavior (edge-to-edge card, swipe actions, velocity thresholds).
-- **Alternative:** `react-native-deck-swiper`
-  - Faster to start but less flexible; may struggle with custom physics/stacking.
+- **Recommendation:** `react-native-gesture-handler` + `react-native-reanimated` (custom deck).
 
-## One-Page Architecture Outline (Text Diagram)
+## Architecture Outline (Text Diagram)
 
 ```
 [Expo App]
    |
    |-- UI Layer
-   |     |-- Swipe Deck (gesture-handler + reanimated)
-   |     |-- List Management
-   |     |-- Contact Detail
+   |     |-- Swipe Deck
+   |     |-- Manage List
    |
-   |-- Navigation Layer (@react-navigation)
-   |     |-- Root Stack (Onboarding -> Main Tabs)
-   |     |-- Tabs (Home | Lists | Settings)
+   |-- Navigation Layer
+   |     |-- Root Stack (Onboarding -> Main)
    |
    |-- Data Layer
-   |     |-- Contact Service (expo-contacts)
+   |     |-- Contacts Service (expo-contacts)
    |     |-- Local Store
    |           |-- AsyncStorage (prefs, flags)
-   |           |-- SQLite (contacts, interactions)
-   |
-   |-- Optional Cloud Sync (**post-v1**)
-         |-- Supabase (auth + sync when online)
+   |           |-- SQLite (contacts, frequencies)
 ```
